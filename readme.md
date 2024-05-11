@@ -30,7 +30,7 @@ A simple URL shortening service implemented in Go using the Fiber web framework 
 
 - To access a shortened URL, simply enter it in your browser:
     ```bash
-   [text](http://localhost:3000/{short_id})
+   http://localhost:3000/{short_id}
 
  
 
