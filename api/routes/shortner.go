@@ -9,19 +9,20 @@ import (
 	"github.com/Aashish-32/URL-Shortener/helpers"
 	"github.com/asaskevich/govalidator"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
 type request struct {
 	URL         string        `json:"url"`
-	Expire      time.Duration `json:"expire"`
+	Expiry      time.Duration `json:"expiry"`
 	CustomShort string        `json:"custom_short"`
 }
 
 type response struct {
 	URL            string        `json:"url"`
-	Short          string        `json:"short"`
-	Expire         time.Duration `json:"expire"`
+	CustomShort    string        `json:"short"`
+	Expiry         time.Duration `json:"expiry"`
 	RateLimiting   int           `json:"rate_limiting"`
 	Ratelimitreset time.Duration `json:"ratelimitreset"`
 }
@@ -67,6 +68,39 @@ func ShortenURL(c *fiber.Ctx) error {
 
 	//enforcing https,ssl
 	body.URL = helpers.EnforceHTTPS(body.URL)
+
+	var id string
+	if body.CustomShort == "" {
+		id = uuid.New().String()[:6]
+
+	} else {
+		id = body.CustomShort
+	}
+
+	r := database.CreateClient(0)
+	defer r.Close()
+
+	val, _ := r.Get(database.Ctx, id).Result()
+	if val != "" {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Url custom short is already in use",
+		})
+	}
+
+	if body.Expiry == 0 {
+		body.Expiry = 24
+	}
+
+	err = r.Set(database.Ctx, id, body.URL, body.Expiry).Err()
+
+	if err != nil {
+
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "unable to connect to server to set url",
+			"error":   err,
+		})
+	}
+
 	r2.Decr(database.Ctx, c.IP())
 
 	return nil
