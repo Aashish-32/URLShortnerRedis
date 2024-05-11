@@ -1,6 +1,6 @@
 # URL Shortener
 
-A simple URL shortening service implemented in Go using the Fiber web framework and Redis for data storage.
+A URL shortening service implemented in Go using the Fiber web framework and Redis for data storage.
 
 ## Features
 
