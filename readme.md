@@ -25,12 +25,14 @@ A simple URL shortening service implemented in Go using the Fiber web framework 
 
 - To shorten a URL, send a POST request to /api/v1 with a JSON payload containing the URL:
 
-      ```bash
+    ```bash
    curl -X POST http://localhost:3000/api/v1 -H "Content-Type: application/json" -d '{"url":"https://example.com"}'
 
 - To access a shortened URL, simply enter it in your browser:
+
     ```bash
-   http://localhost:3000/{short_id}
+   http://localhost:3000/{short_id} 
+
 
  
 
