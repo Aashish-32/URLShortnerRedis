@@ -12,7 +12,7 @@ func CreateClient(dbno int) *redis.Client {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "",
-		DB:       1,
+		DB:       dbno,
 	})
 	return rdb
 }
