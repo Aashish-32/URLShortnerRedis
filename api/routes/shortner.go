@@ -24,7 +24,7 @@ type response struct {
 	CustomShort    string        `json:"custom_short"`
 	Expiry         time.Duration `json:"expiry"`
 	XRateRemaining int           `json:"x_rate_remaining"`
-	RateLimitReset time.Duration `json:"rate_imit_reset"`
+	RateLimitReset time.Duration `json:"rate_limit_reset"`
 }
 
 func ShortenURL(c *fiber.Ctx) error {
@@ -38,18 +38,18 @@ func ShortenURL(c *fiber.Ctx) error {
 	r2 := database.CreateClient(1)
 	defer r2.Close()
 
-	_, err := r2.Get(database.Ctx, c.IP()).Result()
+	val, err := r2.Get(database.Ctx, c.IP()).Result()
 	if err == redis.Nil {
-		r2.Set(database.Ctx, c.IP(), os.Getenv("API_QUOTA"), 30*60*time.Second).Err()
+		_ = r2.Set(database.Ctx, c.IP(), os.Getenv("API_QUOTA"), 30*60*time.Second).Err()
 	} else {
-		value, _ := r2.Get(database.Ctx, c.IP()).Result()
-		valint, _ := strconv.Atoi(value)
+		val, _ = r2.Get(database.Ctx, c.IP()).Result()
+		valint, _ := strconv.Atoi(val)
 
 		if valint <= 0 {
 			limit, _ := r2.TTL(database.Ctx, c.IP()).Result()
 			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
-				"error": "rate limit exceeded",
-				"limit": limit / time.Minute,
+				"error":            "rate limit exceeded",
+				"rate_limit_reset": limit / time.Nanosecond / time.Minute,
 			})
 		}
 
@@ -80,7 +80,7 @@ func ShortenURL(c *fiber.Ctx) error {
 	r := database.CreateClient(0)
 	defer r.Close()
 
-	val, _ := r.Get(database.Ctx, id).Result()
+	val, _ = r.Get(database.Ctx, id).Result()
 	if val != "" {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error": "Url custom short is already in use",
@@ -91,7 +91,7 @@ func ShortenURL(c *fiber.Ctx) error {
 		body.Expiry = 24
 	}
 
-	err = r.Set(database.Ctx, id, body.URL, body.Expiry).Err()
+	err = r.Set(database.Ctx, id, body.URL, body.Expiry*3600*time.Second).Err()
 
 	if err != nil {
 
@@ -114,7 +114,7 @@ func ShortenURL(c *fiber.Ctx) error {
 	resp.XRateRemaining, _ = strconv.Atoi(val)
 
 	ttl, _ := r2.TTL(database.Ctx, c.IP()).Result()
-	resp.RateLimitReset = ttl / time.Minute
+	resp.RateLimitReset = ttl / time.Nanosecond / time.Minute
 	resp.CustomShort = os.Getenv("DOMAIN") + "/" + id
 
 	return c.Status(fiber.StatusOK).JSON(resp)
