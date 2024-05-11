@@ -33,6 +33,11 @@ A simple URL shortening service implemented in Go using the Fiber web framework 
     ```bash
    http://localhost:3000/{short_id} 
 
+## Environment Variables
+
+- PORT: Port number for the application (default: 3000)
+- DB_ADDR: Redis database address (default: localhost)
+- API_QUOTA: Rate limit for API requests (default: 10)
 
  
 
